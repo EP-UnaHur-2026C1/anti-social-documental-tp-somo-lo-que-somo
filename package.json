@@ -4,6 +4,7 @@
   "description": "UnaHur anti-social net - Trabajo Práctico",
   "main": "index.js",
   "scripts": {
+    "start": "node src/main.js",
     "dev": "nodemon src/main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,5 +12,11 @@
   "license": "MIT",
   "devDependencies": {
     "nodemon": "^3.1.10"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "joi": "^18.2.3",
+    "mongoose": "^9.7.2"
   }
 }
