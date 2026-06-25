@@ -39,21 +39,28 @@ const getUserById = async (req, res) => {
 const createUser = async (req, res) => {
 
     try {
-
         const { nickname, email } = req.body;
-
-        const existingUser = await User.findOne({
+        //validacion de nickname 
+        const existingNickname = await User.findOne({
             nickname
         });
 
-        if (existingUser) {
-
+        if (existingNickname) {
             return res.status(400).json({
                 message: "El nickname ya existe"
             });
-
         }
+        //validacion de email
+        const existingEmail = await User.findOne({
+            email
+        });
 
+        if (existingEmail) {
+            return res.status(400).json({
+                message: "El email ya está registrado"
+            });
+        }
+        // creo nuevo usuario
         const newUser = await User.create({
             nickname,
             email

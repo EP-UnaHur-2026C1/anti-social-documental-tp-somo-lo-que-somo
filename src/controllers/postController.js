@@ -130,10 +130,73 @@ const deletePost = async (req, res) => {
     });
 };
 
+// agregar imagen al post 
+const addImgToPost = async (req, res) => {
+    const { postId } = req.params;
+    const { url } = req.body;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+        return res.status(404).json({
+            message: "Post no encontrado"
+        });
+    }
+
+    post.images.push({ url });
+    await post.save();
+    res.status(201).json(post);
+};
+
+// eliminar imagen del post 
+const deleteImgFromPost = async (req, res) => {
+    const { postId, imageId } = req.params;
+    const post = await Post.findById(postId);
+
+    if (!post) {
+        return res.status(404).json({
+            message: "Post no encontrado"
+        });
+    }
+
+    post.images.pull(imageId);
+    await post.save();
+    res.json({
+        message: "Imagen eliminada"
+    });
+};
+
+
+// actualizar imagen de un post 
+const updateImgFromPost = async (req, res) => {
+    const { postId, imageId } = req.params;
+    const { url } = req.body;
+
+    const post = await Post.findById(postId);
+
+    if (!post) {
+        return res.status(404).json({
+            message: "Post no encontrado"
+        });
+    }
+    const image = post.images.id(imageId);
+    if (!image) {
+        return res.status(404).json({
+            message: "Imagen no encontrada"
+        });
+    }
+
+    image.url = url;
+    await post.save();
+    res.json(post);
+};
+
 module.exports = {
     getPosts,
     getPostById,
     createPost,
     updatePost,
-    deletePost
+    deletePost,
+    addImgToPost,
+    deleteImgFromPost,
+    updateImgFromPost
 };
