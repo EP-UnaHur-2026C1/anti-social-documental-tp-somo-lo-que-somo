@@ -27,7 +27,7 @@ const postSchema = new mongoose.Schema(
             ref: "User",
             required: true
         },
-        // Requerimiento bonus para imágenes
+        // Requerimiento bonus para imágenes, enbebo la imagen esquema en el post
         images: [imageSchema],
         // Requerimiento bonus para tags
         tags: [
