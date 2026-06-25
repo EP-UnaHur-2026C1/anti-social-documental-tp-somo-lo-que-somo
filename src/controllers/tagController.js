@@ -1,4 +1,4 @@
-const Tag = require("../schemas/Tag");
+const Tag = require("../models/Tag");
 
 const getTags = async (req, res) => {
     try {

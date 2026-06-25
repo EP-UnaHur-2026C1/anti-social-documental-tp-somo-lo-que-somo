@@ -1,5 +1,5 @@
-const Post = require("../schemas/Post");
-const Comment = require("../schemas/Comment");
+const Post = require("../models/Post");
+const Comment = require("../models/Comment");
 
 const mesesVisibles =
     Number(process.env.COMMENT_VISIBLE_MONTHS) || 6;

@@ -1,7 +1,7 @@
 //Importo los esquemas correspondientes para poder aplicar mis funciones crud
-const Comment = require("../schemas/Comment");
-const Post = require("../schemas/Post");
-const User = require("../schemas/User");
+const Comment = require("../models/Comment");
+const Post = require("../models/Post");
+const User = require("../models/User");
 
 // Obtener todos los comentarios
 const getComments = async (req, res) => {
