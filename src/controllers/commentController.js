@@ -25,6 +25,36 @@ const getComments = async (req, res) => {
 
 };
 
+// Obtener comentario por id
+const getCommentById = async (req, res) => {
+
+    try {
+
+        const { id } = req.params;
+
+        const comment = await Comment.findById(id)
+            .populate("post")
+            .populate("author");
+
+        if (!comment) {
+            return res.status(404).json({
+                message: "Comentario no encontrado"
+            });
+        }
+
+        res.json(comment);
+
+    } catch (error) {
+
+        res.status(500).json({
+            message: "Error al obtener comentario",
+            error: error.message
+        });
+
+    }
+
+};
+
 // Crear comentario
 const createComment = async (req, res) => {
     try {
@@ -68,7 +98,7 @@ const updateComment = async (req, res) => {
         const { text } = req.body;
 
         const comment = await Comment.findById(id);
-        // valido que el comentario exista 
+        // valido que el comentario exista
         if (!comment) {
             return res.status(404).json({
                 message: "Comentario no encontrado"
@@ -116,6 +146,7 @@ const deleteComment = async (req, res) => {
 
 module.exports = {
     getComments,
+    getCommentById,
     createComment,
     updateComment,
     deleteComment
