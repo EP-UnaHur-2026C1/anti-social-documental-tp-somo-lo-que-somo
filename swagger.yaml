@@ -1,0 +1,715 @@
+openapi: 3.0.3
+info:
+  title: Anti-Social API
+  description: >
+    API REST para la red social "anti-social-documental" (TP UnaHur 2026C1) - Estrategias de Persistencia.
+    Permite gestionar usuarios, posts (con imágenes embebidas), comentarios y tags.
+  version: "1.0.0"
+  contact:
+    name: somo-lo-que-somo
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor local (vía docker-compose)
+
+tags:
+  - name: Users
+    description: Gestión de usuarios
+  - name: Posts
+    description: Gestión de posts e imágenes embebidas
+  - name: Comments
+    description: Gestión de comentarios
+  - name: Tags
+    description: Gestión de tags
+
+paths:
+  /users:
+    get:
+      tags: [Users]
+      summary: Obtener todos los usuarios
+      responses:
+        "200":
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    post:
+      tags: [Users]
+      summary: Crear un usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreateInput"
+      responses:
+        "201":
+          description: Usuario creado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Usuario creado correctamente
+                  user:
+                    $ref: "#/components/schemas/User"
+        "400":
+          description: Nickname/email ya existe o body inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /users/{id}:
+    parameters:
+      - $ref: "#/components/parameters/MongoId"
+    get:
+      tags: [Users]
+      summary: Obtener un usuario por id
+      responses:
+        "200":
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: ID inválido o no enviado
+        "404":
+          description: Usuario no encontrado
+        "500":
+          $ref: "#/components/responses/ServerError"
+    put:
+      tags: [Users]
+      summary: Actualizar un usuario (nickname y/o email)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdateInput"
+      responses:
+        "200":
+          description: Usuario actualizado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Usuario actualizado correctamente
+                  user:
+                    $ref: "#/components/schemas/User"
+        "400":
+          description: Datos inválidos, nickname/email duplicado, o ningún campo enviado
+        "404":
+          description: Usuario no encontrado
+        "500":
+          $ref: "#/components/responses/ServerError"
+    delete:
+      tags: [Users]
+      summary: Eliminar un usuario
+      responses:
+        "200":
+          description: Usuario eliminado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Usuario eliminado correctamente
+        "400":
+          description: ID inválido o no enviado
+        "404":
+          description: Usuario no encontrado
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /posts:
+    get:
+      tags: [Posts]
+      summary: Obtener todos los posts
+      description: >
+        Devuelve los posts con el autor y los tags poblados, e incluye
+        los comentarios de los últimos N meses (configurable por
+        COMMENT_VISIBLE_MONTHS, default 6).
+      responses:
+        "200":
+          description: Lista de posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PostWithComments"
+    post:
+      tags: [Posts]
+      summary: Crear un post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "201":
+          description: Post creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "400":
+          description: El autor no existe, o uno o más tags no existen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /posts/{id}:
+    parameters:
+      - $ref: "#/components/parameters/MongoId"
+    get:
+      tags: [Posts]
+      summary: Obtener un post por id
+      responses:
+        "200":
+          description: Post encontrado (con autor, tags y comentarios recientes)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostWithComments"
+        "404":
+          description: Post no encontrado
+    put:
+      tags: [Posts]
+      summary: Actualizar la descripción de un post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "200":
+          description: Post actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "404":
+          description: Post no encontrado
+    delete:
+      tags: [Posts]
+      summary: Eliminar un post
+      responses:
+        "200":
+          description: Post eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Post eliminado
+        "404":
+          description: Post no encontrado
+
+  /posts/{postId}/images:
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/MongoIdString"
+    post:
+      tags: [Posts]
+      summary: Agregar una imagen a un post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: https://example.com/imagen.jpg
+      responses:
+        "201":
+          description: Imagen agregada, devuelve el post actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "404":
+          description: Post no encontrado
+
+  /posts/{postId}/images/{imageId}:
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/MongoIdString"
+      - name: imageId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/MongoIdString"
+    put:
+      tags: [Posts]
+      summary: Actualizar la url de una imagen de un post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: https://example.com/nueva-imagen.jpg
+      responses:
+        "200":
+          description: Imagen actualizada, devuelve el post actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "404":
+          description: Post o imagen no encontrada
+    delete:
+      tags: [Posts]
+      summary: Eliminar una imagen de un post
+      responses:
+        "200":
+          description: Imagen eliminada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Imagen eliminada
+        "404":
+          description: Post o imagen no encontrada
+
+  /comments:
+    get:
+      tags: [Comments]
+      summary: Obtener todos los comentarios
+      description: Devuelve los comentarios con el post y el autor poblados.
+      responses:
+        "200":
+          description: Lista de comentarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    post:
+      tags: [Comments]
+      summary: Crear un comentario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "201":
+          description: Comentario creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        "400":
+          description: Body inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Post o usuario no encontrado
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /comments/{id}:
+    parameters:
+      - $ref: "#/components/parameters/MongoId"
+    put:
+      tags: [Comments]
+      summary: Actualizar el texto de un comentario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "200":
+          description: Comentario actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        "404":
+          description: Comentario no encontrado
+        "500":
+          $ref: "#/components/responses/ServerError"
+    delete:
+      tags: [Comments]
+      summary: Eliminar un comentario
+      responses:
+        "200":
+          description: Comentario eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Comentario eliminado
+        "404":
+          description: Comentario no encontrado
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /tags:
+    get:
+      tags: [Tags]
+      summary: Obtener todos los tags
+      responses:
+        "200":
+          description: Lista de tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tag"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    post:
+      tags: [Tags]
+      summary: Crear un tag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagInput"
+      responses:
+        "201":
+          description: Tag creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        "400":
+          description: Ya existe un tag con ese nombre, o body inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /tags/{id}:
+    parameters:
+      - $ref: "#/components/parameters/MongoId"
+    get:
+      tags: [Tags]
+      summary: Obtener un tag por id
+      responses:
+        "200":
+          description: Tag encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        "404":
+          description: Tag no encontrado
+        "500":
+          $ref: "#/components/responses/ServerError"
+    put:
+      tags: [Tags]
+      summary: Actualizar un tag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagInput"
+      responses:
+        "200":
+          description: Tag actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        "404":
+          description: Tag no encontrado
+        "500":
+          $ref: "#/components/responses/ServerError"
+    delete:
+      tags: [Tags]
+      summary: Eliminar un tag
+      responses:
+        "200":
+          description: Tag eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Tag eliminado
+        "404":
+          description: Tag no encontrado
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+components:
+  parameters:
+    MongoId:
+      name: id
+      in: path
+      required: true
+      description: ObjectId de Mongo (24 caracteres hexadecimales)
+      schema:
+        $ref: "#/components/schemas/MongoIdString"
+
+  responses:
+    ServerError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              error:
+                type: string
+
+  schemas:
+    MongoIdString:
+      type: string
+      pattern: "^[0-9a-fA-F]{24}$"
+      example: "665f1a2b3c4d5e6f7a8b9c0d"
+
+    User:
+      type: object
+      properties:
+        _id:
+          $ref: "#/components/schemas/MongoIdString"
+        nickname:
+          type: string
+          minLength: 3
+          maxLength: 20
+          example: gerardo_g
+        email:
+          type: string
+          format: email
+          example: gerardo@example.com
+        followers:
+          type: array
+          items:
+            $ref: "#/components/schemas/MongoIdString"
+        following:
+          type: array
+          items:
+            $ref: "#/components/schemas/MongoIdString"
+
+    UserCreateInput:
+      type: object
+      required: [nickname, email]
+      properties:
+        nickname:
+          type: string
+          minLength: 3
+          maxLength: 20
+          example: gerardo_g
+        email:
+          type: string
+          format: email
+          example: gerardo@example.com
+
+    UserUpdateInput:
+      type: object
+      description: Debe enviarse al menos uno de los dos campos.
+      minProperties: 1
+      properties:
+        nickname:
+          type: string
+          minLength: 3
+          maxLength: 20
+        email:
+          type: string
+          format: email
+
+    Image:
+      type: object
+      properties:
+        _id:
+          $ref: "#/components/schemas/MongoIdString"
+        url:
+          type: string
+          format: uri
+          example: https://example.com/imagen.jpg
+
+    Post:
+      type: object
+      properties:
+        _id:
+          $ref: "#/components/schemas/MongoIdString"
+        description:
+          type: string
+          example: Mi primer post en anti-social
+        author:
+          oneOf:
+            - $ref: "#/components/schemas/MongoIdString"
+            - $ref: "#/components/schemas/User"
+        tags:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/MongoIdString"
+              - $ref: "#/components/schemas/Tag"
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/Image"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PostWithComments:
+      allOf:
+        - $ref: "#/components/schemas/Post"
+        - type: object
+          properties:
+            comments:
+              type: array
+              items:
+                $ref: "#/components/schemas/Comment"
+
+    PostInput:
+      type: object
+      required: [description, author]
+      properties:
+        description:
+          type: string
+          example: Mi primer post en anti-social
+        author:
+          $ref: "#/components/schemas/MongoIdString"
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/MongoIdString"
+        images:
+          type: array
+          items:
+            type: object
+            required: [url]
+            properties:
+              url:
+                type: string
+                format: uri
+
+    Comment:
+      type: object
+      properties:
+        _id:
+          $ref: "#/components/schemas/MongoIdString"
+        text:
+          type: string
+          example: Qué buen post!
+        post:
+          oneOf:
+            - $ref: "#/components/schemas/MongoIdString"
+            - $ref: "#/components/schemas/Post"
+        author:
+          oneOf:
+            - $ref: "#/components/schemas/MongoIdString"
+            - $ref: "#/components/schemas/User"
+        commentDate:
+          type: string
+          format: date-time
+
+    CommentInput:
+      type: object
+      required: [text, post, author]
+      properties:
+        text:
+          type: string
+          example: Qué buen post!
+        post:
+          $ref: "#/components/schemas/MongoIdString"
+        author:
+          $ref: "#/components/schemas/MongoIdString"
+
+    Tag:
+      type: object
+      properties:
+        _id:
+          $ref: "#/components/schemas/MongoIdString"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 20
+          example: humor
+
+    TagInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 20
+          example: humor
+
+    ValidationError:
+      type: object
+      properties:
+        errores:
+          type: array
+          items:
+            type: object
+            properties:
+              atributo:
+                type: string
+                example: nickname
+              error:
+                type: string
+                example: "\"nickname\" is required"

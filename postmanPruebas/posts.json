@@ -1,0 +1,30 @@
+[
+    {
+        "description": "Post de prueba con imágenes",
+        "author": "6a3e8f01fa630c58533496f9",
+        "images": [
+            {
+                "url": "https://picsum.photos/600/400"
+            },
+            {
+                "url": "https://picsum.photos/600/401"
+            }
+        ],
+        "tags": [
+            "6a3eb536f91f00899f76e934",
+            "6a3eb5e3bd8be00b90da294a"
+        ]
+    },
+    {
+        "description": "Segundo post de prueba con imágenes",
+        "author": "6a3de8b16c2852a0a8301314",
+        "images": [
+            {
+                "url": "https://picsum.photos/600/400"
+            }
+        ],
+        "tags": [
+            "6a3eb61dbd8be00b90da294b"
+        ]
+    }
+]

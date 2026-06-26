@@ -16,4 +16,5 @@ const tagSchema = Joi.object({
 
 });
 
+// Exporto el validador de esquema para usarlo en las rutas
 module.exports = { tagSchema };

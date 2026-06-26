@@ -9,325 +9,234 @@ const mesesVisibles =
 // Obtener todos los posts
 const getPosts = async (req, res) => {
 
-    try {
-        //defino la fecha limite para mostrar comentarios
-        const fechaLimite = new Date();
-        fechaLimite.setMonth(
-            fechaLimite.getMonth() - mesesVisibles
-        );
+    const fechaLimite = new Date();
 
-        const posts = await Post.find()
-            .populate("author")
-            .populate("tags");
+    fechaLimite.setMonth(
+        fechaLimite.getMonth() - mesesVisibles
+    );
 
-        // hago un promise all para esperar la respuesta de todos los posts
-        const resultado = await Promise.all(
-            posts.map(async (post) => {
+    const posts = await Post.find()
+        .populate("author")
+        .populate("tags");
 
-                const comments = await Comment.find({
-                    post: post._id,
-                    visible: true,
-                    commentDate: {
-                        $gte: fechaLimite
-                    }
-                }).populate("author");
+    const resultado = await Promise.all(
+        posts.map(async (post) => {
 
-                return {
-                    ...post.toObject(),
-                    comments
-                };
-            })
-        );
+            const comments = await Comment.find({
+                post: post._id,
+                commentDate: {
+                    $gte: fechaLimite
+                }
+            }).populate("author");
 
-        res.json(resultado);
+            return {
+                ...post.toObject(),
+                comments
+            };
+        })
+    );
 
-    } catch (error) {
-
-        res.status(500).json({
-            message: "Error al obtener los posts",
-            error: error.message
-        });
-
-    }
-
+    res.json(resultado);
 };
 
 // Obtener un post por id
 const getPostById = async (req, res) => {
 
-    try {
+    const { id } = req.params;
 
-        const { id } = req.params;
+    const fechaLimite = new Date();
 
-        const fechaLimite = new Date();
+    fechaLimite.setMonth(
+        fechaLimite.getMonth() - mesesVisibles
+    );
 
-        fechaLimite.setMonth(
-            fechaLimite.getMonth() - mesesVisibles
-        );
+    const post = await Post.findById(id)
+        .populate("author")
+        .populate("tags");
 
-        const post = await Post.findById(id)
-            .populate("author")
-            .populate("tags");
-
-        if (!post) {
-            return res.status(404).json({
-                message: "Post no encontrado"
-            });
-        }
-
-        const comments = await Comment.find({
-            post: id,
-            visible: true,
-            commentDate: {
-                $gte: fechaLimite
-            }
-        }).populate("author");
-
-        res.json({
-            ...post.toObject(),
-            comments
+    if (!post) {
+        return res.status(404).json({
+            message: "Post no encontrado"
         });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: "Error al obtener el post",
-            error: error.message
-        });
-
     }
 
+    const comments = await Comment.find({
+        post: id,
+        commentDate: {
+            $gte: fechaLimite
+        }
+    }).populate("author");
+
+    res.json({
+        ...post.toObject(),
+        comments
+    });
 };
 
 // Crear post
 const createPost = async (req, res) => {
+    const {
+        description,
+        author,
+        tags,
+        images
+    } = req.body;
 
     try {
+        // primero valido que el  autor exista
+        //busco el id del author en la entidad User
+        const userExists = await User.findById(author);
 
-        const {
-            description,
-            tagIds,
-            author,
-            images
-        } = req.body;
-
-        // Validar existencia del usuario
-        const user = await User.findById(author);
-
-        if (!user) {
-            return res.status(404).json({
-                message: "Usuario no encontrado"
+        if (!userExists) {
+            return res.status(400).json({
+                message: "El author no existe"
             });
         }
 
-        // Validar existencia de tags
-        if (tagIds && tagIds.length > 0) {
-
-            const tags = await Tag.find({
-                _id: {
-                    $in: tagIds
-                }
+        // si es un post con tags valido que los tags existan
+        // busco el id del tag o los tags en la entidad Tag
+        if (tags && tags.length > 0) {
+            const foundTags = await Tag.find({
+                _id: { $in: tags }
             });
 
-            if (tags.length !== tagIds.length) {
-                return res.status(404).json({
+            if (foundTags.length !== tags.length) {
+                return res.status(400).json({
                     message: "Uno o más tags no existen"
                 });
             }
-
         }
 
+        // creo post en bd
         const newPost = await Post.create({
             description,
             author,
-            tags: tagIds || [],
+            tags: tags || [],
             images: images || []
         });
 
         res.status(201).json(newPost);
 
     } catch (error) {
-
         res.status(500).json({
             message: "Error al crear el post",
             error: error.message
         });
-
     }
-
 };
 
 // Actualizar post
 const updatePost = async (req, res) => {
 
-    try {
+    const { id } = req.params;
+    const { description } = req.body;
 
-        const { id } = req.params;
-        const { description } = req.body;
+    const post = await Post.findById(id);
 
-        const post = await Post.findById(id);
-
-        if (!post) {
-            return res.status(404).json({
-                message: "Post no encontrado"
-            });
-        }
-
-        post.description = description;
-
-        await post.save();
-
-        res.json(post);
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: "Error al actualizar el post",
-            error: error.message
+    if (!post) {
+        return res.status(404).json({
+            message: "Post no encontrado"
         });
-
     }
 
+    post.description = description;
+
+    await post.save();
+
+    res.json(post);
 };
 
 // Eliminar post
 const deletePost = async (req, res) => {
 
-    try {
+    const { id } = req.params;
 
-        const { id } = req.params;
+    const post = await Post.findById(id);
 
-        const post = await Post.findById(id);
-
-        if (!post) {
-            return res.status(404).json({
-                message: "Post no encontrado"
-            });
-        }
-
-        await Post.findByIdAndDelete(id);
-
-        res.json({
-            message: "Post eliminado"
+    if (!post) {
+        return res.status(404).json({
+            message: "Post no encontrado"
         });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: "Error al eliminar el post",
-            error: error.message
-        });
-
     }
 
+    await Post.findByIdAndDelete(id);
+
+    res.json({
+        message: "Post eliminado"
+    });
 };
 
-// Agregar imagen al post
+// agregar imagen al post 
 const addImgToPost = async (req, res) => {
+    const { postId } = req.params;
+    const { url } = req.body;
 
-    try {
-
-        const { postId } = req.params;
-        const { url } = req.body;
-
-        const post = await Post.findById(postId);
-
-        if (!post) {
-            return res.status(404).json({
-                message: "Post no encontrado"
-            });
-        }
-
-        post.images.push({ url });
-
-        await post.save();
-
-        res.status(201).json(post);
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: "Error al agregar imagen",
-            error: error.message
+    const post = await Post.findById(postId);
+    if (!post) {
+        return res.status(404).json({
+            message: "Post no encontrado"
         });
-
     }
 
+    post.images.push({ url });
+    await post.save();
+    res.status(201).json(post);
 };
 
-// Eliminar imagen del post
+// eliminar imagen del post 
 const deleteImgFromPost = async (req, res) => {
+    const { postId, imageId } = req.params;
 
-    try {
+    const post = await Post.findById(postId);
 
-        const { postId, imageId } = req.params;
-
-        const post = await Post.findById(postId);
-
-        if (!post) {
-            return res.status(404).json({
-                message: "Post no encontrado"
-            });
-        }
-
-        post.images.pull(imageId);
-
-        await post.save();
-
-        res.json({
-            message: "Imagen eliminada"
+    if (!post) {
+        return res.status(404).json({
+            message: "Post no encontrado"
         });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: "Error al eliminar imagen",
-            error: error.message
-        });
-
     }
 
+    // busco que el id de la imagen exista dentro de mi coleccion de imagenes del post
+    const imageExists = post.images.id(imageId);
+
+    if (!imageExists) {
+        return res.status(404).json({
+            message: "Imagen no encontrada"
+        });
+    }
+
+    //si existe la imagen dentro del post la elimino
+    post.images.pull(imageId);
+    await post.save();
+
+    res.json({
+        message: "Imagen eliminada"
+    });
 };
 
-// Actualizar imagen del post
+
+// actualizar imagen de un post 
 const updateImgFromPost = async (req, res) => {
+    const { postId, imageId } = req.params;
+    const { url } = req.body;
 
-    try {
-
-        const { postId, imageId } = req.params;
-        const { url } = req.body;
-
-        const post = await Post.findById(postId);
-
-        if (!post) {
-            return res.status(404).json({
-                message: "Post no encontrado"
-            });
-        }
-
-        const image = post.images.id(imageId);
-
-        if (!image) {
-            return res.status(404).json({
-                message: "Imagen no encontrada"
-            });
-        }
-
-        image.url = url;
-
-        await post.save();
-
-        res.json(post);
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: "Error al actualizar imagen",
-            error: error.message
+    const post = await Post.findById(postId);
+    //verifico que exista el post que quiero actualizar
+    if (!post) {
+        return res.status(404).json({
+            message: "Post no encontrado"
         });
-
+    }
+    //verifico que exista la imagen del post quiero actualizar
+    const image = post.images.id(imageId);
+    if (!image) {
+        return res.status(404).json({
+            message: "Imagen no encontrada"
+        });
     }
 
+    image.url = url;
+    await post.save();
+    res.json(post);
 };
 
 module.exports = {

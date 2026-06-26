@@ -84,36 +84,50 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
     try {
+
         const { nickname, email } = req.body;
         const user = req.record;
-
-        //validacion que no exista el nickname
-        const existingNickname = await User.findOne({ nickname });
-
-        if (
-            existingNickname &&
-            existingNickname._id.toString() !== user._id.toString()
-        ) {
+        //Aca valido que al menos uno de los dos campos este en el body para actualizar
+        if (!nickname && !email) {
             return res.status(400).json({
-                message: "El nickname ya existe"
+                message: "Debe enviar al menos un campo para actualizar"
             });
         }
 
-        // validacion que no exista el mail
-        const existingEmail = await User.findOne({ email });
+        // Valido el nickname si viene en el body
+        if (nickname) {
 
-        if (
-            existingEmail &&
-            existingEmail._id.toString() !== user._id.toString()
-        ) {
-            return res.status(400).json({
-                message: "El email ya está registrado"
-            });
+            const existingNickname = await User.findOne({ nickname });
+
+            if (
+                existingNickname &&
+                existingNickname._id.toString() !== user._id.toString()
+            ) {
+                return res.status(400).json({
+                    message: "El nickname ya existe"
+                });
+            }
+            // actualizo nickname
+            user.nickname = nickname;
         }
 
-        user.nickname = nickname;
-        user.email = email;
+        // Valido el email si viene en el body
+        if (email) {
 
+            const existingEmail = await User.findOne({ email });
+
+            if (
+                existingEmail &&
+                existingEmail._id.toString() !== user._id.toString()
+            ) {
+                return res.status(400).json({
+                    message: "El email ya existe"
+                });
+            }
+            //actulizo mail
+            user.email = email;
+        }
+        // guardo las modificaciones
         await user.save();
 
         res.status(200).json({
@@ -122,10 +136,12 @@ const updateUser = async (req, res) => {
         });
 
     } catch (error) {
+
         res.status(500).json({
             message: "Error al actualizar usuario",
             error: error.message
         });
+
     }
 };
 

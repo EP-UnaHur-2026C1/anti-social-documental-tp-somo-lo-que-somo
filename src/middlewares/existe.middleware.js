@@ -1,4 +1,4 @@
-// Middleware para validar que el parametro pasado por params sea un numero
+// Middleware para validar que el parametro pasado por params sea el tipo de dato correcto
 const mongoose = require("mongoose");
 
 const validaPathParameterMiddleware = (req, res, next) => {
