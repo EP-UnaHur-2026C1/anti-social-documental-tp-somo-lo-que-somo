@@ -15,7 +15,7 @@ const {
 } = require("../controllers/postController")
 
 //Traigo los metodos del controlador Tag
-const { addTagToPost, removeTagFromPost } = require("../controllers/tagController")
+//const { addTagToPost, removeTagFromPost } = require("../controllers/tagController")
 
 // Importo el middleware de validación de esquemas y el esquema de usuario para validar los datos de entrada
 const { schemaValidator } = require('../middlewares/validateSchema')
@@ -37,10 +37,11 @@ router.post("/:postId/images", addImgToPost);
 router.put("/:postId/images/:imageId", updateImgFromPost);
 router.delete("/:postId/images/:imageId", deleteImgFromPost);
 
+/*
 // tags
 router.post("/:postId/tags/:tagId", addTagToPost);
 router.delete("/:postId/tags/:tagId", removeTagFromPost);
-
+*/
 
 // Exporto el router para usarlo en main.js
 module.exports = router
