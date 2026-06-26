@@ -32,7 +32,11 @@ app.use((req, res) => {
     });
 });
 
-
+/* DEBUG
+app.use((req, res, next) => {
+    console.log(req.method, req.originalUrl);
+    next();
+});*/
 
 // Función para iniciar el servidor
 const startServer = async () => {

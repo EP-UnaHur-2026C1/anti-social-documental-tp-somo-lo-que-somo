@@ -1,7 +1,7 @@
 // Importo joi para validar esquemas
 const Joi = require("joi");
 // importo objectId para validar id con formato mongo
-const userSchema = Joi.object({
+const userCreateSchema = Joi.object({
 
     nickname: Joi.string()
         .min(3)
@@ -26,4 +26,4 @@ const userSchema = Joi.object({
 });
 
 // Exporto el esquema para usarlo en los controladores
-module.exports = { userSchema };
+module.exports = { userCreateSchema };
