@@ -1,4 +1,6 @@
+// Importo joi para validar esquemas
 const Joi = require("joi");
+// importo objectId para validar id con formato mongo
 const { objectId } = require("./validador");
 
 const commentSchema = Joi.object({

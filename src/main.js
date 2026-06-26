@@ -25,6 +25,14 @@ app.use("/tags", tagRoutes);
 app.use("/users", userRoutes);
 
 
+// Middleware para rutas inexistentes
+app.use((req, res) => {
+    res.status(404).json({
+        message: "Ruta no encontrada"
+    });
+});
+
+
 
 // Función para iniciar el servidor
 const startServer = async () => {

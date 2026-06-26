@@ -83,12 +83,33 @@ const createUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-
     try {
-
         const { nickname, email } = req.body;
-
         const user = req.record;
+
+        //validacion que no exista el nickname
+        const existingNickname = await User.findOne({ nickname });
+
+        if (
+            existingNickname &&
+            existingNickname._id.toString() !== user._id.toString()
+        ) {
+            return res.status(400).json({
+                message: "El nickname ya existe"
+            });
+        }
+
+        // validacion que no exista el mail
+        const existingEmail = await User.findOne({ email });
+
+        if (
+            existingEmail &&
+            existingEmail._id.toString() !== user._id.toString()
+        ) {
+            return res.status(400).json({
+                message: "El email ya está registrado"
+            });
+        }
 
         user.nickname = nickname;
         user.email = email;
@@ -101,14 +122,11 @@ const updateUser = async (req, res) => {
         });
 
     } catch (error) {
-
         res.status(500).json({
             message: "Error al actualizar usuario",
             error: error.message
         });
-
     }
-
 };
 
 const deleteUser = async (req, res) => {
