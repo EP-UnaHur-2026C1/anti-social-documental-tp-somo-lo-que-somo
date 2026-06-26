@@ -7,4 +7,5 @@ const userUpdateSchema = Joi.object({
     email: Joi.string().email()
 }).min(1);
 
+// Exporto el validador de esquema para usarlo en las rutas
 module.exports = { userUpdateSchema };

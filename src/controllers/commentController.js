@@ -27,45 +27,38 @@ const getComments = async (req, res) => {
 
 // Crear comentario
 const createComment = async (req, res) => {
-
     try {
-
-        const { text, postId, userId } = req.body;
-
-        const post = await Post.findById(postId);
-
-        if (!post) {
+        const { text, post, author } = req.body;
+        //verifico que exista el post
+        const postExists = await Post.findById(post);
+        if (!postExists) {
             return res.status(404).json({
                 message: "Post no encontrado"
             });
         }
-
-        const user = await User.findById(userId);
-
-        if (!user) {
+        //verifico que exista el user
+        const userExists = await User.findById(author);
+        if (!userExists) {
             return res.status(404).json({
                 message: "Usuario no encontrado"
             });
         }
-
+        //creo comentario
         const newComment = await Comment.create({
             text,
-            post: postId,
-            author: userId,
+            post,
+            author,
             commentDate: new Date()
         });
 
         res.status(201).json(newComment);
 
     } catch (error) {
-
         res.status(500).json({
             message: "Error al crear comentario",
             error: error.message
         });
-
     }
-
 };
 
 // Actualizar comentario

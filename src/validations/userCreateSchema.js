@@ -25,5 +25,5 @@ const userCreateSchema = Joi.object({
 
 });
 
-// Exporto el esquema para usarlo en los controladores
+// Exporto el validador de esquema para usarlo en las rutas
 module.exports = { userCreateSchema };
