@@ -11,15 +11,16 @@ const {
     deleteComment
 } = require("../controllers/commentController");
 
-// Importo el middleware de validación de esquemas y el esquema de comentario
+// Importo el middleware de validación de esquemas y los esquemas de comentario
 const { schemaValidator } = require("../middlewares/validateSchema");
 const { commentSchema } = require("../validations/commentSchema");
+const { commentUpdateSchema } = require("../validations/commentUpdateSchema");
 
 // Defino las rutas y les asigno el método correspondiente del controlador
 router.get("/", getComments);
 router.get("/:id", getCommentById);
 router.post("/", schemaValidator(commentSchema), createComment);
-router.put("/:id", schemaValidator(commentSchema), updateComment);
+router.put("/:id", schemaValidator(commentUpdateSchema), updateComment);
 router.delete("/:id", deleteComment);
 
 // Exporto el router para usarlo en main.js
