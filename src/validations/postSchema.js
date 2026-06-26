@@ -1,6 +1,7 @@
+// Importo joi para validar esquemas
 const Joi = require("joi");
+// importo objectId para validar id con formato mongo
 const { objectId } = require("./validador");
-//defino la estructura del id de monogodb ya que los id's ya no son numericos
 
 const postSchema = Joi.object({
     description: Joi.string()
@@ -11,8 +12,17 @@ const postSchema = Joi.object({
 
     tagIds: Joi.array()
         .items(objectId)
+        .optional(),
+
+    images: Joi.array()
+        .items(
+            Joi.object({
+                imageUrl: Joi.string()
+                    .uri()
+                    .required()
+            })
+        )
         .optional()
 });
-
 
 module.exports = postSchema;

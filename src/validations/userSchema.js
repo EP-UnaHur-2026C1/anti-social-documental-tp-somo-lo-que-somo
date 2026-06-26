@@ -1,7 +1,6 @@
-// Importo Joi para validar los datos de entrada
-const Joi = require('joi');
-
-// Defino el esquema de validación para los usuarios
+// Importo joi para validar esquemas
+const Joi = require("joi");
+// importo objectId para validar id con formato mongo
 const userSchema = Joi.object({
 
     nickname: Joi.string()
