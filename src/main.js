@@ -3,14 +3,21 @@ require("dotenv").config();
 // importo express para crear el servidor
 const express = require("express");
 const app = express();
+const cors = require("cors");
 
 // Importo la función de conexión a la base de datos
 const connectToDB = require("./db/database");
 // Defino el puerto en el que correrá el servidor
 const PORT = process.env.PORT || 3000;
 
+app.use(cors({
+  origin: "http://localhost:5173"
+}));
+
 // Middleware
 app.use(express.json());
+
+
 
 // Defino las rutas de la API
 const commentRoutes = require("./routes/commentRoutes");
